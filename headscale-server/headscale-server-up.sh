@@ -38,9 +38,10 @@ fi
 echo "[debug] RAW_KEYS output:"
 echo "$RAW_KEYS"
 
-# strip everything except the two preauth keys, in order of appearance
-VPS_KEY=$(echo "$RAW_KEYS" | grep -oE '(hskey-auth-[A-Za-z0-9_-]+|[a-f0-9]{48,64})' | sed -n '1p' || true)
-PC_KEY=$(echo "$RAW_KEYS"  | grep -oE '(hskey-auth-[A-Za-z0-9_-]+|[a-f0-9]{48,64})' | sed -n '2p' || true)
+# strip ANSI escape codes and extract the two preauth keys in order of appearance
+CLEAN_KEYS=$(echo "$RAW_KEYS" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
+VPS_KEY=$(echo "$CLEAN_KEYS" | grep -oE '(hskey-auth-[A-Za-z0-9_-]+|[a-f0-9]{48,64})' | sed -n '1p' || true)
+PC_KEY=$(echo "$CLEAN_KEYS"  | grep -oE '(hskey-auth-[A-Za-z0-9_-]+|[a-f0-9]{48,64})' | sed -n '2p' || true)
 
 echo "[debug] extracted VPS_KEY=${VPS_KEY}"
 echo "[debug] extracted PC_KEY=${PC_KEY}"

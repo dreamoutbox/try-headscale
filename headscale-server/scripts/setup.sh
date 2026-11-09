@@ -13,24 +13,13 @@ set -e
 USER_NAME="${1:-${HEADSCALE_USER:-myuser}}"
 
 echo "[debug][setup.sh] creating user: ${USER_NAME}" >&2
-docker exec headscale headscale users create "$USER_NAME" >&2 || true
+docker exec -e NO_COLOR=1 headscale headscale users create "$USER_NAME" >&2 || true
 
-USERS_TABLE=$(docker exec headscale headscale users list)
+USERS_TABLE=$(docker exec -e NO_COLOR=1 headscale headscale users list | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
 echo "[debug][setup.sh] listing users:" >&2
 echo "$USERS_TABLE" >&2
 
-USER_ID=$(echo "$USERS_TABLE" | awk -F'|' -v u="$USER_NAME" '
-  {
-    id = $1; name = $2; username = $3;
-    gsub(/^[ \t]+|[ \t]+$/, "", id);
-    gsub(/^[ \t]+|[ \t]+$/, "", name);
-    gsub(/^[ \t]+|[ \t]+$/, "", username);
-    if (id ~ /^[0-9]+$/ && (username == u || name == u)) {
-      print id;
-      exit;
-    }
-  }
-')
+USER_ID=$(echo "$USERS_TABLE" | grep -E "[|[:space:]]${USER_NAME}[|[:space:]]" | grep -oE '^[[:space:]]*[0-9]+' | tr -d '[:space:]' | head -n 1)
 
 if [ -z "$USER_ID" ]; then
   echo "[error][setup.sh] could not find numeric user ID for ${USER_NAME}" >&2
@@ -40,7 +29,7 @@ fi
 echo "[debug][setup.sh] resolved USER_ID=${USER_ID} for ${USER_NAME}" >&2
 
 echo "[debug][setup.sh] creating 1h VPS preauthkey..." >&2
-docker exec headscale headscale preauthkeys create --user "$USER_ID" --expiration 1h
+docker exec -e NO_COLOR=1 headscale headscale preauthkeys create --user "$USER_ID" --expiration 1h
 
 echo "[debug][setup.sh] creating 24h reusable PC preauthkey..." >&2
-docker exec headscale headscale preauthkeys create --user "$USER_ID" --expiration 24h --reusable
+docker exec -e NO_COLOR=1 headscale headscale preauthkeys create --user "$USER_ID" --expiration 24h --reusable
