@@ -1,6 +1,6 @@
 services:
   headscale:
-    image: headscale/headscale:0.24.3
+    image: headscale/headscale:latest
     container_name: headscale
     restart: unless-stopped
     command: serve
