@@ -1,5 +1,5 @@
 #!/bin/sh
-# Install curl and Tailscale inside the Ubuntu container, start tailscaled, and join the Headscale tailnet.
+# Install curl and Tailscale inside the Ubuntu container, reset tailscaled state, and join the Headscale tailnet.
 #
 # Inputs:
 #   HEADSCALE_URL   (env): Headscale control server URL (required).
@@ -23,20 +23,17 @@ if ! command -v tailscale >/dev/null 2>&1; then
   curl -fsSL https://tailscale.com/install.sh | sh
 fi
 
-if [ ! -S /var/run/tailscale/tailscaled.sock ]; then
-  TS_FORCE_NOISE_443=false nohup tailscaled --state=/var/lib/tailscale/tailscaled.state </dev/null >/var/log/tailscaled.log 2>&1 &
-  until [ -S /var/run/tailscale/tailscaled.sock ]; do
-    sleep 1
-  done
-fi
+pkill -x tailscaled 2>/dev/null || true
+rm -f /var/lib/tailscale/tailscaled.state /var/run/tailscale/tailscaled.sock
+nohup tailscaled --state=/var/lib/tailscale/tailscaled.state </dev/null >/var/log/tailscaled.log 2>&1 &
+until [ -S /var/run/tailscale/tailscaled.sock ]; do
+  sleep 1
+done
 
 tailscale up \
   --login-server="${HEADSCALE_URL}" \
   --authkey="${TS_AUTHKEY}" \
   --hostname="${UBUNTU_HOSTNAME:-ubuntu}" \
-  --accept-routes \
-  --force-reauth \
-  --reset
+  --accept-routes
 
 tailscale status
-

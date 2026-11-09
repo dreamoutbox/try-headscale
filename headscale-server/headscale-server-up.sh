@@ -52,12 +52,15 @@ echo "[debug] extracted PC_KEY=${PC_KEY}"
 echo "[setup] joining VPS to tailnet as a node..."
 command -v tailscale >/dev/null || curl -fsSL https://tailscale.com/install.sh | sh
 
+echo "[debug] resetting tailscaled state on VPS to avoid forced port 443 fallback..."
+systemctl stop tailscaled || true
+rm -f /var/lib/tailscale/tailscaled.state
+systemctl start tailscaled
+
 tailscale up \
   --login-server="${SERVER_URL}" \
   --authkey="${VPS_KEY}" \
-  --hostname="vps-relay" \
-  --force-reauth \
-  --reset
+  --hostname="vps-relay"
 
 echo ""
 echo "VPS tailnet IP: $(tailscale ip -4)"
