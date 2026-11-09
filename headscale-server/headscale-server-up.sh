@@ -18,11 +18,11 @@ echo "Waiting for headscale to come up..."
 until docker exec headscale headscale users list >/dev/null 2>&1; do sleep 1; done
 
 echo "[setup] generating keys..."
-RAW_KEYS=$(docker exec headscale sh /scripts/setup.sh "$USER_NAME")
+RAW_KEYS=$(./scripts/setup.sh "$USER_NAME")
 
-# strip everything except the two 64-char hex keys, in order of appearance
-VPS_KEY=$(echo "$RAW_KEYS" | grep -oE '[a-f0-9]{64}' | sed -n '1p')
-PC_KEY=$(echo "$RAW_KEYS"  | grep -oE '[a-f0-9]{64}' | sed -n '2p')
+# strip everything except the two hex keys, in order of appearance
+VPS_KEY=$(echo "$RAW_KEYS" | grep -oE '[a-f0-9]{48,64}' | sed -n '1p' || true)
+PC_KEY=$(echo "$RAW_KEYS"  | grep -oE '[a-f0-9]{48,64}' | sed -n '2p' || true)
 
 [ -n "$VPS_KEY" ] || { echo "failed to extract VPS key"; echo "$RAW_KEYS"; exit 1; }
 
