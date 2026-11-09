@@ -9,4 +9,4 @@ services:
       - ./data:/var/lib/headscale
       - ./scripts:/scripts:ro
     ports:
-      - "127.0.0.1:8080:8080" # control API — never expose directly, proxy via Caddy
+      - "8080:8080" # direct HTTP access via VPS IP

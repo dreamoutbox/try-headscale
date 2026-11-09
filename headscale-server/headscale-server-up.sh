@@ -1,49 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOMAIN="${HEADSCALE_DOMAIN:?Set HEADSCALE_DOMAIN, e.g. export HEADSCALE_DOMAIN=headscale.yourdomain.com}"
+VPS_IP="${VPS_IP:-${HEADSCALE_DOMAIN:?Set VPS_IP or HEADSCALE_DOMAIN}}"
+SERVER_URL="${HEADSCALE_URL:-http://${VPS_IP}:8080}"
+USER_NAME="${HEADSCALE_USER:-myuser}"
 
 command -v docker >/dev/null || { echo "docker required"; exit 1; }
 
 mkdir -p config data scripts
 chmod +x scripts/setup.sh
 
-if [ ! -f config/config.yaml ]; then
-  cat > config/config.yaml <<EOF
-server_url: https://${DOMAIN}
-listen_addr: 0.0.0.0:8080
-metrics_listen_addr: 127.0.0.1:9090
-
-database:
-  type: sqlite
-  sqlite:
-    path: /var/lib/headscale/db.sqlite
-
-prefixes:
-  v4: 100.64.0.0/10
-
-dns:
-  magic_dns: true
-  base_domain: tailnet.${DOMAIN#*.}
-EOF
-fi
+sed -i "s|^server_url:.*|server_url: ${SERVER_URL}|" config/config.yaml
 
 docker compose up -d
 
 echo "Waiting for headscale to come up..."
 until docker exec headscale headscale users list >/dev/null 2>&1; do sleep 1; done
 
-docker exec headscale sh /scripts/setup.sh
+echo "[setup] generating keys..."
+RAW_KEYS=$(docker exec headscale sh /scripts/setup.sh "$USER_NAME")
 
-cat <<'EOF'
+# strip everything except the two 64-char hex keys, in order of appearance
+VPS_KEY=$(echo "$RAW_KEYS" | grep -oE '[a-f0-9]{64}' | sed -n '1p')
+PC_KEY=$(echo "$RAW_KEYS"  | grep -oE '[a-f0-9]{64}' | sed -n '2p')
 
-Next:
-1. Join the VPS host itself to the tailnet (it's the relay, so it needs to be a node too):
-     curl -fsSL https://tailscale.com/install.sh | sh
-     tailscale up --login-server https://'"$DOMAIN"' --authkey <VPS_KEY_FROM_ABOVE>
+[ -n "$VPS_KEY" ] || { echo "failed to extract VPS key"; echo "$RAW_KEYS"; exit 1; }
 
-2. Point Caddy (or your reverse proxy) at the headscale container:
-     headscale.yourdomain.com { reverse_proxy 127.0.0.1:8080 }
+echo "[setup] joining VPS to tailnet as a node..."
+command -v tailscale >/dev/null || curl -fsSL https://tailscale.com/install.sh | sh
 
-3. Give the "PC node" preauth key above to your PC's headscale-client-connect.sh
-EOF
+tailscale up \
+  --login-server="${SERVER_URL}" \
+  --authkey="${VPS_KEY}" \
+  --hostname="vps-relay"
+
+echo ""
+echo "VPS tailnet IP: $(tailscale ip -4)"
+echo ""
+echo "Give this to your PC's headscale-client-connect.sh:"
+echo "  HEADSCALE_URL=${SERVER_URL} TS_AUTHKEY=${PC_KEY} ./headscale-client-connect.sh"

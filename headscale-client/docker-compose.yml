@@ -1,9 +1,20 @@
 services:
+  website:
+    image: nginx:alpine
+    container_name: website
+    restart: unless-stopped
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
+    networks:
+      - meshnet
+    # no host port published — only reachable inside the docker network
+
   tailscale:
     image: tailscale/tailscale:latest
     container_name: ts-client
     hostname: ${TS_HOSTNAME:-mypc}
-    network_mode: host # so 100.x.x.x:8080 maps straight to the host's port 8080
+    cap_drop:
+      - ALL
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -11,5 +22,11 @@ services:
       - ./ts-data:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
       - ./scripts:/scripts:ro
+    networks:
+      - meshnet
     restart: unless-stopped
-    entrypoint: [ "/bin/sh", "-c", "tailscaled --state=/var/lib/tailscale/tailscaled.state & sleep infinity" ]
+    entrypoint: [ "/scripts/entrypoint.sh" ]
+
+networks:
+  meshnet:
+    driver: bridge
