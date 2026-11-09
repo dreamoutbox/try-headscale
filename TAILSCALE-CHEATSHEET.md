@@ -73,6 +73,52 @@ Logs out, invalidates the node key, clears `/var/lib/tailscale/tailscaled.state`
 /scripts/tailnet-logout.sh
 ```
 
+### Kick a Machine from Tailnet
+Expires the machine's session key immediately and deletes the node from Headscale (accepts Node ID, hostname, or tailnet IP):
+```bash
+# Kick by hostname:
+VPS_IP=104.248.156.42 ./headscale-server/scripts/kick-machine.sh ubuntu2
+
+# Kick by Node ID or tailnet IP:
+VPS_IP=104.248.156.42 ./headscale-server/scripts/kick-machine.sh 3
+VPS_IP=104.248.156.42 ./headscale-server/scripts/kick-machine.sh 100.64.0.3
+```
+
+### List & Revoke Compromised Tokens
+```bash
+# List all preauth tokens:
+VPS_IP=104.248.156.42 ./headscale-server/scripts/list-tokens.sh
+
+# Revoke (expire + delete) a specific token by full token, prefix, or numeric ID:
+VPS_IP=104.248.156.42 ./headscale-server/scripts/revoke-token.sh hskey-auth-...
+VPS_IP=104.248.156.42 ./headscale-server/scripts/revoke-token.sh 2
+
+# Revoke ALL preauth tokens immediately:
+VPS_IP=104.248.156.42 ./headscale-server/scripts/revoke-token.sh --all
+```
+
+---
+
+## Incident Response: What If a Preauth Token Is Compromised?
+
+A preauth token (`hskey-auth-...`) is only used at **registration time** (`tailscale up --authkey=...`) to authorize a machine to join the tailnet. Once a machine joins, it authenticates using its own persistent node key.
+
+Therefore, revoking the token alone stops **new** machines from joining, but does **not** disconnect a rogue machine that already used the token. Follow these 3 steps:
+
+1. **Revoke the compromised token immediately** (so no new machines can register with it):
+   ```bash
+   VPS_IP=104.248.156.42 ./headscale-server/scripts/revoke-token.sh <token_or_id_or_--all>
+   ```
+2. **Audit joined machines and kick any unauthorized node**:
+   ```bash
+   VPS_IP=104.248.156.42 ./headscale-server/scripts/list-machines.sh
+   VPS_IP=104.248.156.42 ./headscale-server/scripts/kick-machine.sh <rogue_node_id_or_hostname>
+   ```
+3. **Issue a fresh token** for legitimate machines (prefer single-use or short expiration):
+   ```bash
+   VPS_IP=104.248.156.42 ./headscale-server/scripts/create-token.sh myuser 1h
+   ```
+
 ---
 
 ## Headscale Server CLI Reference (Run on VPS)
@@ -98,8 +144,8 @@ docker exec headscale headscale users destroy --identifier <user_id>
 > Note: In Headscale `v0.25+`, `--user` requires the numeric User ID from `headscale users list`.
 
 ```bash
-# List preauth keys for user ID 1
-docker exec headscale headscale preauthkeys list --user 1
+# List all preauth keys
+docker exec headscale headscale preauthkeys list
 
 # Create a single-use 1h key for user ID 1
 docker exec headscale headscale preauthkeys create --user 1 --expiration 1h
@@ -107,8 +153,11 @@ docker exec headscale headscale preauthkeys create --user 1 --expiration 1h
 # Create a reusable 24h key for user ID 1
 docker exec headscale headscale preauthkeys create --user 1 --expiration 24h --reusable
 
-# Expire a preauth key
-docker exec headscale headscale preauthkeys expire --user 1 <key_prefix_or_id>
+# Expire a preauth key by numeric key ID
+docker exec headscale headscale preauthkeys expire --id <key_id>
+
+# Delete a preauth key by numeric key ID
+docker exec headscale headscale preauthkeys delete --id <key_id> --force
 ```
 
 ### Nodes (Machines)
