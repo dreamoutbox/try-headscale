@@ -24,7 +24,7 @@ if ! command -v tailscale >/dev/null 2>&1; then
 fi
 
 if [ ! -S /var/run/tailscale/tailscaled.sock ]; then
-  nohup tailscaled --state=/var/lib/tailscale/tailscaled.state </dev/null >/var/log/tailscaled.log 2>&1 &
+  TS_FORCE_NOISE_443=false nohup tailscaled --state=/var/lib/tailscale/tailscaled.state </dev/null >/var/log/tailscaled.log 2>&1 &
   until [ -S /var/run/tailscale/tailscaled.sock ]; do
     sleep 1
   done
@@ -34,7 +34,9 @@ tailscale up \
   --login-server="${HEADSCALE_URL}" \
   --authkey="${TS_AUTHKEY}" \
   --hostname="${UBUNTU_HOSTNAME:-ubuntu}" \
-  --accept-routes
+  --accept-routes \
+  --force-reauth \
+  --reset
 
 tailscale status
 

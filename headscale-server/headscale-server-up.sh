@@ -38,9 +38,9 @@ fi
 echo "[debug] RAW_KEYS output:"
 echo "$RAW_KEYS"
 
-# strip everything except the two hex keys, in order of appearance
-VPS_KEY=$(echo "$RAW_KEYS" | grep -oE '[a-f0-9]{48,64}' | sed -n '1p' || true)
-PC_KEY=$(echo "$RAW_KEYS"  | grep -oE '[a-f0-9]{48,64}' | sed -n '2p' || true)
+# strip everything except the two preauth keys, in order of appearance
+VPS_KEY=$(echo "$RAW_KEYS" | grep -oE '(hskey-auth-[A-Za-z0-9_-]+|[a-f0-9]{48,64})' | sed -n '1p' || true)
+PC_KEY=$(echo "$RAW_KEYS"  | grep -oE '(hskey-auth-[A-Za-z0-9_-]+|[a-f0-9]{48,64})' | sed -n '2p' || true)
 
 echo "[debug] extracted VPS_KEY=${VPS_KEY}"
 echo "[debug] extracted PC_KEY=${PC_KEY}"
@@ -54,7 +54,9 @@ command -v tailscale >/dev/null || curl -fsSL https://tailscale.com/install.sh |
 tailscale up \
   --login-server="${SERVER_URL}" \
   --authkey="${VPS_KEY}" \
-  --hostname="vps-relay"
+  --hostname="vps-relay" \
+  --force-reauth \
+  --reset
 
 echo ""
 echo "VPS tailnet IP: $(tailscale ip -4)"

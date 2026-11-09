@@ -8,7 +8,9 @@ tailscale up \
   --login-server="${HEADSCALE_URL}" \
   --authkey="${TS_AUTHKEY}" \
   --hostname="${TS_HOSTNAME:-mypc}" \
-  --accept-routes
+  --accept-routes \
+  --force-reauth \
+  --reset
 
 # no network_mode: host, so the tun interface lives in this container's
 # netns — forward incoming tailnet traffic on :8080 to the nginx container
