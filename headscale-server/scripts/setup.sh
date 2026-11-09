@@ -11,8 +11,14 @@ set -e
 
 USER_NAME="${1:-${HEADSCALE_USER:-myuser}}"
 
-docker exec headscale headscale users create "$USER_NAME" >/dev/null 2>&1 || true
+echo "[debug][setup.sh] creating user: ${USER_NAME}" >&2
+docker exec headscale headscale users create "$USER_NAME" >&2 || true
 
-# One key per line, nothing else — host script parses these directly
+echo "[debug][setup.sh] listing users:" >&2
+docker exec headscale headscale users list >&2
+
+echo "[debug][setup.sh] creating 1h VPS preauthkey..." >&2
 docker exec headscale headscale preauthkeys create --user "$USER_NAME" --expiration 1h
+
+echo "[debug][setup.sh] creating 24h reusable PC preauthkey..." >&2
 docker exec headscale headscale preauthkeys create --user "$USER_NAME" --expiration 24h --reusable

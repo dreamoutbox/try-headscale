@@ -53,7 +53,7 @@ echo "[1/3] Installing Docker on ${SSH_USER}@${VPS_IP}..."
 run_ssh "command -v docker >/dev/null 2>&1 || (curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh)"
 
 echo "[2/3] Syncing ./headscale-server to ${SSH_USER}@${VPS_IP}:${REMOTE_DIR}..."
-rsync -avz \
+rsync -avzc \
   -e "ssh -i ${SSH_PRIV_KEY} -o StrictHostKeyChecking=accept-new" \
   ./headscale-server/ "${SSH_USER}@${VPS_IP}:${REMOTE_DIR}/"
 
