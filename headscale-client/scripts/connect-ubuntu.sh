@@ -14,6 +14,11 @@ set -e
 : "${HEADSCALE_URL:?HEADSCALE_URL not set}"
 : "${TS_AUTHKEY:?TS_AUTHKEY not set}"
 
+pkill -x tailscaled 2>/dev/null || true
+if [ -f /etc/resolv.pre-tailscale-backup.conf ]; then
+  cat /etc/resolv.pre-tailscale-backup.conf > /etc/resolv.conf
+fi
+
 if ! command -v curl >/dev/null 2>&1; then
   apt-get update
   apt-get install -y curl ca-certificates iproute2 procps
@@ -23,7 +28,6 @@ if ! command -v tailscale >/dev/null 2>&1; then
   curl -fsSL https://tailscale.com/install.sh | sh
 fi
 
-pkill -x tailscaled 2>/dev/null || true
 rm -f /var/lib/tailscale/tailscaled.state /var/run/tailscale/tailscaled.sock
 nohup tailscaled --state=/var/lib/tailscale/tailscaled.state </dev/null >/var/log/tailscaled.log 2>&1 &
 until [ -S /var/run/tailscale/tailscaled.sock ]; do

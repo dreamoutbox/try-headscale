@@ -15,6 +15,16 @@ set -e
 : "${TS_AUTHKEY:?TS_AUTHKEY not set}"
 
 pkill tailscaled 2>/dev/null || true
+if [ -f /etc/resolv.pre-tailscale-backup.conf ]; then
+  cat /etc/resolv.pre-tailscale-backup.conf > /etc/resolv.conf
+fi
+
+# Resolve the nginx container IP via Docker DNS (127.0.0.11)
+WEBSITE_IP=$(getent hosts website | awk '{print $1}')
+[ -n "$WEBSITE_IP" ] || { echo "Error: could not resolve website container IP" >&2; exit 1; }
+
+apk add --no-cache socat >/dev/null
+
 rm -f /var/lib/tailscale/tailscaled.state /var/run/tailscale/tailscaled.sock
 nohup tailscaled --state=/var/lib/tailscale/tailscaled.state </dev/null >/var/log/tailscaled.log 2>&1 &
 until [ -S /var/run/tailscale/tailscaled.sock ]; do
@@ -25,12 +35,12 @@ tailscale up \
   --login-server="${HEADSCALE_URL}" \
   --authkey="${TS_AUTHKEY}" \
   --hostname="${TS_HOSTNAME:-mypc}" \
-  --accept-routes
+  --accept-routes \
+  --accept-dns=false
 
 # no network_mode: host, so the tun interface lives in this container's
 # netns — forward incoming tailnet traffic on :8080 to the nginx container
-apk add --no-cache socat >/dev/null
 pkill socat 2>/dev/null || true
-nohup socat TCP-LISTEN:8080,fork,reuseaddr TCP:website:80 </dev/null >/dev/null 2>&1 &
+nohup socat TCP-LISTEN:8080,fork,reuseaddr "TCP:${WEBSITE_IP}:80" </dev/null >/var/log/socat.log 2>&1 &
 
 tailscale status
