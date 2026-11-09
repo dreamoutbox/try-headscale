@@ -56,10 +56,21 @@ VPS_IP=104.248.156.42 ./headscale-server/scripts/create-token.sh alice 7d
 ### Client Script to Login to Tailnet
 Installs Tailscale via `curl -fsSL https://tailscale.com/install.sh | sh` if not installed, resets `tailscaled` cleanly, and joins the tailnet:
 ```bash
+# Non-interactive (pass env vars):
 VPS_IP=104.248.156.42 TS_AUTHKEY=hskey-auth-... ./headscale-client/tailnet-login.sh
 
-# With a custom hostname:
-VPS_IP=104.248.156.42 TS_AUTHKEY=hskey-auth-... TS_HOSTNAME=my-laptop ./headscale-client/tailnet-login.sh
+# Interactive prompt (asks for VPS_IP, TS_AUTHKEY, TS_HOSTNAME):
+./headscale-client/tailnet-login-prompt.sh
+# Or inside ubuntu / ubuntu2 container:
+/scripts/tailnet-login-prompt.sh
+```
+
+### Client Script to Logout / Exit Tailnet
+Logs out, invalidates the node key, clears `/var/lib/tailscale/tailscaled.state`, and restores container DNS:
+```bash
+./headscale-client/tailnet-logout.sh
+# Or inside ubuntu / ubuntu2 container:
+/scripts/tailnet-logout.sh
 ```
 
 ---

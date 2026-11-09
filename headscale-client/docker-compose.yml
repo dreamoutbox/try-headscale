@@ -47,6 +47,24 @@ services:
     restart: unless-stopped
     entrypoint: [ "/scripts/entrypoint-ubuntu.sh" ]
 
+  ubuntu2:
+    image: ubuntu:24.04
+    container_name: ubuntu2
+    hostname: ${UBUNTU2_HOSTNAME:-ubuntu2}
+    environment:
+      - TS_FORCE_NOISE_443=false
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./ubuntu2-ts-data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+      - ./scripts:/scripts:ro
+    networks:
+      - ubuntunet
+    restart: unless-stopped
+    entrypoint: [ "/scripts/entrypoint-ubuntu.sh" ]
+
 networks:
   meshnet:
     driver: bridge

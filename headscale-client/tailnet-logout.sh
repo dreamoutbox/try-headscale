@@ -1,0 +1,1 @@
+scripts/tailnet-logout.sh

@@ -1,6 +1,7 @@
 #!/bin/sh
-# Entrypoint for the Ubuntu tailnet client container.
-# Starts tailscaled if already installed and keeps the container alive.
+# Entrypoint for Ubuntu tailnet client containers.
+# Installs curl + Tailscale (if not yet installed), starts tailscaled, and keeps the container alive
+# without joining a tailnet automatically.
 #
 # Inputs: none
 # Example usage:
@@ -8,9 +9,9 @@
 
 set -e
 
-if command -v tailscaled >/dev/null 2>&1; then
-  tailscaled --state=/var/lib/tailscale/tailscaled.state &
-fi
+/scripts/install-tailscale.sh
+
+mkdir -p /var/lib/tailscale /var/run/tailscale
+TS_FORCE_NOISE_443=false tailscaled --state=/var/lib/tailscale/tailscaled.state &
 
 sleep infinity
-

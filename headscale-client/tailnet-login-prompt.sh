@@ -1,0 +1,1 @@
+scripts/tailnet-login-prompt.sh
