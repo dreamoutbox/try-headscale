@@ -64,6 +64,7 @@ tailscale up \
 
 echo ""
 echo "VPS tailnet IP: $(tailscale ip -4)"
+echo "Public relay URL (once PC connects): http://${VPS_IP}/"
 echo ""
 echo "Give this to your PC's headscale-client-connect.sh:"
 echo "VPS_IP=${VPS_IP} TS_AUTHKEY=${PC_KEY} ./headscale-client-connect.sh"

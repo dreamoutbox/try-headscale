@@ -11,6 +11,7 @@ flowchart LR
   subgraph VPS["Public VPS (<VPS_IP>)"]
     HS["headscale container (:8080)"]
     VPSNode["vps-relay (100.64.0.1)"]
+    Relay["vps-relay-proxy (nginx :80)<br/>proxies / -> mypc.tailnet.internal:8080"]
   end
 
   subgraph PC["Local PC (Docker)"]
@@ -25,6 +26,7 @@ flowchart LR
     end
   end
 
+  Relay == "Tailscale WireGuard Tunnel" ==> TSClient
   TSClient <== "Tailscale WireGuard Tunnel" ==> U1
   TSClient -. "Control Plane (:8080)" .-> HS
   U1 -. "Control Plane (:8080)" .-> HS
@@ -88,8 +90,16 @@ This starts 4 containers:
 
 ---
 
-### 3. Curl the Private Website Over the Tailnet
+### 3. Access the Website (Publicly via VPS IP or Over the Tailnet)
 
+**Option A: From the public internet (any browser or device, without Tailscale):**
+Open `http://<VPS_IP>/` (port `80`):
+```bash
+curl http://104.248.156.42/
+```
+The `vps-relay-proxy` nginx container on the VPS resolves `mypc.tailnet.internal` via Tailscale MagicDNS (`100.100.100.100`) and proxies port `:80` over the tailnet to `mypc:8080` -> `website:80`.
+
+**Option B: From inside the `ubuntu` tailnet container:**
 Open a shell inside the `ubuntu` container using [ubuntu-tailnet.sh](ubuntu-tailnet.sh):
 
 ```bash
