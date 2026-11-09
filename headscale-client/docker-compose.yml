@@ -1,0 +1,15 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: ts-client
+    hostname: ${TS_HOSTNAME:-mypc}
+    network_mode: host # so 100.x.x.x:8080 maps straight to the host's port 8080
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./ts-data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+      - ./scripts:/scripts:ro
+    restart: unless-stopped
+    entrypoint: [ "/bin/sh", "-c", "tailscaled --state=/var/lib/tailscale/tailscaled.state & sleep infinity" ]

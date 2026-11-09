@@ -1,0 +1,12 @@
+services:
+  headscale:
+    image: headscale/headscale:0.24.3
+    container_name: headscale
+    restart: unless-stopped
+    command: serve
+    volumes:
+      - ./config:/etc/headscale
+      - ./data:/var/lib/headscale
+      - ./scripts:/scripts:ro
+    ports:
+      - "127.0.0.1:8080:8080" # control API — never expose directly, proxy via Caddy
