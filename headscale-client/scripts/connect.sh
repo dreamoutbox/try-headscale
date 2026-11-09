@@ -14,6 +14,6 @@ tailscale up \
 # netns — forward incoming tailnet traffic on :8080 to the nginx container
 apk add --no-cache socat >/dev/null
 pkill socat 2>/dev/null || true
-socat TCP-LISTEN:8080,fork,reuseaddr TCP:website:80 &
+nohup socat TCP-LISTEN:8080,fork,reuseaddr TCP:website:80 </dev/null >/dev/null 2>&1 &
 
 tailscale status

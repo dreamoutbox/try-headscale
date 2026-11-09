@@ -1,0 +1,1 @@
+headscale-client/ubuntu-tailnet.sh

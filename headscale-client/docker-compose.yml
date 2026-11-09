@@ -27,6 +27,24 @@ services:
     restart: unless-stopped
     entrypoint: [ "/scripts/entrypoint.sh" ]
 
+  ubuntu:
+    image: ubuntu:24.04
+    container_name: ubuntu
+    hostname: ${UBUNTU_HOSTNAME:-ubuntu}
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./ubuntu-ts-data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+      - ./scripts:/scripts:ro
+    networks:
+      - ubuntunet
+    restart: unless-stopped
+    entrypoint: [ "/scripts/entrypoint-ubuntu.sh" ]
+
 networks:
   meshnet:
+    driver: bridge
+  ubuntunet:
     driver: bridge
