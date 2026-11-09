@@ -15,9 +15,8 @@ set -e
 : "${TS_AUTHKEY:?TS_AUTHKEY not set}"
 
 pkill tailscaled 2>/dev/null || true
-if [ -f /etc/resolv.pre-tailscale-backup.conf ]; then
-  cat /etc/resolv.pre-tailscale-backup.conf > /etc/resolv.conf
-fi
+sleep 1
+grep -q '127.0.0.11' /etc/resolv.conf || printf 'nameserver 127.0.0.11\noptions ndots:0\n' > /etc/resolv.conf
 
 # Resolve the nginx container IP via Docker DNS (127.0.0.11)
 WEBSITE_IP=$(getent hosts website | awk '{print $1}')

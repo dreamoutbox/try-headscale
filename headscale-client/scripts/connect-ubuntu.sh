@@ -15,9 +15,8 @@ set -e
 : "${TS_AUTHKEY:?TS_AUTHKEY not set}"
 
 pkill -x tailscaled 2>/dev/null || true
-if [ -f /etc/resolv.pre-tailscale-backup.conf ]; then
-  cat /etc/resolv.pre-tailscale-backup.conf > /etc/resolv.conf
-fi
+sleep 1
+grep -q '127.0.0.11' /etc/resolv.conf || printf 'nameserver 127.0.0.11\noptions ndots:0\n' > /etc/resolv.conf
 
 if ! command -v curl >/dev/null 2>&1; then
   apt-get update
