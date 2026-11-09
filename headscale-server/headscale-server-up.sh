@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VPS_IP="${VPS_IP:-${HEADSCALE_DOMAIN:?Set VPS_IP or HEADSCALE_DOMAIN}}"
+: "${VPS_IP:?Set VPS_IP, e.g. export VPS_IP=203.0.113.10}"
 SERVER_URL="${HEADSCALE_URL:-http://${VPS_IP}:8080}"
 USER_NAME="${HEADSCALE_USER:-myuser}"
 
@@ -38,4 +38,4 @@ echo ""
 echo "VPS tailnet IP: $(tailscale ip -4)"
 echo ""
 echo "Give this to your PC's headscale-client-connect.sh:"
-echo "  HEADSCALE_URL=${SERVER_URL} TS_AUTHKEY=${PC_KEY} ./headscale-client-connect.sh"
+echo "VPS_IP=${VPS_IP} TS_AUTHKEY=${PC_KEY} ./headscale-client-connect.sh"

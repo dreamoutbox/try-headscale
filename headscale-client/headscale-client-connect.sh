@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${HEADSCALE_URL:?Set HEADSCALE_URL, e.g. export HEADSCALE_URL=https://headscale.yourdomain.com}"
+: "${VPS_IP:?Set VPS_IP, e.g. export VPS_IP=203.0.113.10}"
 : "${TS_AUTHKEY:?Set TS_AUTHKEY from the 'PC node' preauth key printed by the server script}"
+HEADSCALE_URL="${HEADSCALE_URL:-http://${VPS_IP}:8080}"
 
 docker compose up -d
 
